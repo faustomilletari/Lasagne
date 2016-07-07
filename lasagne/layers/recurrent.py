@@ -446,8 +446,8 @@ class CustomRecurrentLayer(MergeLayer):
             # dimshuffle is faster than T.repeat.
             dot_dims = (list(range(1, self.hid_init.ndim - 1)) +
                         [0, self.hid_init.ndim - 1])
-            hid_init = T.dot(T.ones((num_batch, 1)),
-                             self.hid_init.dimshuffle(dot_dims))
+            hid_init = T.unbroadcast(T.dot(T.ones((num_batch, 1)),
+                             self.hid_init.dimshuffle(dot_dims)),0)
 
         if self.unroll_scan:
             # Retrieve the dimensionality of the incoming layer
@@ -463,14 +463,14 @@ class CustomRecurrentLayer(MergeLayer):
         else:
             # Scan op iterates over first dimension of input and repeatedly
             # applies the step function
-            hid_out = T.unbroadcast(theano.scan(
+            hid_out = theano.scan(
                 fn=step_fun,
                 sequences=sequences,
                 go_backwards=self.backwards,
                 outputs_info=[hid_init],
                 non_sequences=non_seqs,
                 truncate_gradient=self.gradient_steps,
-                strict=True)[0],0)
+                strict=True)[0]
 
         # When it is requested that we only return the final sequence step,
         # we need to slice it out immediately after scan is applied
@@ -1057,11 +1057,11 @@ class LSTMLayer(MergeLayer):
         ones = T.ones((num_batch, 1))
         if not isinstance(self.cell_init, Layer):
             # Dot against a 1s vector to repeat to shape (num_batch, num_units)
-            cell_init = T.dot(ones, self.cell_init)
+            cell_init = T.unbroadcast(T.dot(ones, self.cell_init),0)
 
         if not isinstance(self.hid_init, Layer):
             # Dot against a 1s vector to repeat to shape (num_batch, num_units)
-            hid_init = T.dot(ones, self.hid_init)
+            hid_init = T.unbroadcast(T.dot(ones, self.hid_init),0)
 
         # The hidden-to-hidden weight matrix is always used in step
         non_seqs = [W_hid_stacked]
@@ -1090,14 +1090,14 @@ class LSTMLayer(MergeLayer):
         else:
             # Scan op iterates over first dimension of input and repeatedly
             # applies the step function
-            cell_out, hid_out = T.unbroadcast(theano.scan(
+            cell_out, hid_out = theano.scan(
                 fn=step_fun,
                 sequences=sequences,
                 outputs_info=[cell_init, hid_init],
                 go_backwards=self.backwards,
                 truncate_gradient=self.gradient_steps,
                 non_sequences=non_seqs,
-                strict=True)[0],0)
+                strict=True)[0]
 
         # When it is requested that we only return the final sequence step,
         # we need to slice it out immediately after scan is applied
@@ -1211,7 +1211,7 @@ class GRULayer(MergeLayer):
                  updategate=Gate(W_cell=None),
                  hidden_update=Gate(W_cell=None,
                                     nonlinearity=nonlinearities.tanh),
-                 hid_init=init.Constant(0.),
+                 hid_init=T.unbroadcast(init.Constant(0.),0),
                  backwards=False,
                  learn_init=False,
                  gradient_steps=-1,
@@ -1433,7 +1433,7 @@ class GRULayer(MergeLayer):
 
         if not isinstance(self.hid_init, Layer):
             # Dot against a 1s vector to repeat to shape (num_batch, num_units)
-            hid_init = T.dot(T.ones((num_batch, 1)), self.hid_init)
+            hid_init = T.unbroadcast(T.dot(T.ones((num_batch, 1)), self.hid_init),0)
 
         # The hidden-to-hidden weight matrix is always used in step
         non_seqs = [W_hid_stacked]
@@ -1456,14 +1456,14 @@ class GRULayer(MergeLayer):
         else:
             # Scan op iterates over first dimension of input and repeatedly
             # applies the step function
-            hid_out = T.unbroadcast(theano.scan(
+            hid_out = theano.scan(
                 fn=step_fun,
                 sequences=sequences,
                 go_backwards=self.backwards,
                 outputs_info=[hid_init],
                 non_sequences=non_seqs,
                 truncate_gradient=self.gradient_steps,
-                strict=True)[0],0)
+                strict=True)[0]
 
         # When it is requested that we only return the final sequence step,
         # we need to slice it out immediately after scan is applied
