@@ -463,14 +463,14 @@ class CustomRecurrentLayer(MergeLayer):
         else:
             # Scan op iterates over first dimension of input and repeatedly
             # applies the step function
-            hid_out = theano.scan(
+            hid_out = T.unbroadcast(theano.scan(
                 fn=step_fun,
                 sequences=sequences,
                 go_backwards=self.backwards,
                 outputs_info=[hid_init],
                 non_sequences=non_seqs,
                 truncate_gradient=self.gradient_steps,
-                strict=True)[0]
+                strict=True)[0],0)
 
         # When it is requested that we only return the final sequence step,
         # we need to slice it out immediately after scan is applied
@@ -1090,14 +1090,14 @@ class LSTMLayer(MergeLayer):
         else:
             # Scan op iterates over first dimension of input and repeatedly
             # applies the step function
-            cell_out, hid_out = theano.scan(
+            cell_out, hid_out = T.unbroadcast(theano.scan(
                 fn=step_fun,
                 sequences=sequences,
                 outputs_info=[cell_init, hid_init],
                 go_backwards=self.backwards,
                 truncate_gradient=self.gradient_steps,
                 non_sequences=non_seqs,
-                strict=True)[0]
+                strict=True)[0],0)
 
         # When it is requested that we only return the final sequence step,
         # we need to slice it out immediately after scan is applied
@@ -1456,14 +1456,14 @@ class GRULayer(MergeLayer):
         else:
             # Scan op iterates over first dimension of input and repeatedly
             # applies the step function
-            hid_out = theano.scan(
+            hid_out = T.unbroadcast(theano.scan(
                 fn=step_fun,
                 sequences=sequences,
                 go_backwards=self.backwards,
                 outputs_info=[hid_init],
                 non_sequences=non_seqs,
                 truncate_gradient=self.gradient_steps,
-                strict=True)[0]
+                strict=True)[0],0)
 
         # When it is requested that we only return the final sequence step,
         # we need to slice it out immediately after scan is applied
