@@ -1211,7 +1211,7 @@ class GRULayer(MergeLayer):
                  updategate=Gate(W_cell=None),
                  hidden_update=Gate(W_cell=None,
                                     nonlinearity=nonlinearities.tanh),
-                 hid_init=T.unbroadcast(init.Constant(0.),0),
+                 hid_init=init.Constant(0.),
                  backwards=False,
                  learn_init=False,
                  gradient_steps=-1,
